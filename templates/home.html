@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block body %}
+    <h2>Welcome to the NGS Quality Control database</h2>
+    <div class=metanav>
+    {% if not session.logged_in %}
+        <a href="{{ url_for('login') }}">log in</a>
+    {% else %}
+        <a href="{{ url_for('query_page') }}">query</a>
+            <div class=metanav>
+        <a href="{{ url_for('logout') }}">log out</a>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

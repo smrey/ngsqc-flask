@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block body %}
+  <h2 style="colour:blue;">Query database</h2>
+    {% if session.logged_in %}
+        <form action="{{ url_for('query_page') }}" method=post>
+            <dl>
+                <dt>Enter search term:</dt>
+                <dd><input type=text name=search_term></dd>
+                <dt>Search by:
+                <dd><input type=submit name="button" value="run identifier">
+                <dd><input type=submit name="button" value="run date">
+                <dd><input type=submit name="button" value="reagent kit part id">
+                <dd><input type=submit name="button" value="miseq">
+                <p></p>
+                <dt>Data to include:</dt>
+                <div class=metanav>
+                    <input type="checkbox" name="msrid" value="miseqrunid" checked>MiSeq run identifier
+                </div>
+                <div class=metanav>
+                    <input type="checkbox" name="rundt" value="run_date">Run start date
+                </div>
+                <div class=metanav>
+                    <input type="checkbox" name="ins" value="miseq">Instrument
+                </div>
+                <div class=metanav>
+                    <input type="checkbox" name="ktver" value="kit_version">Kit version number
+                </div>
+                <div class=metanav>
+                    <input type="checkbox" name="op" value="operator">Instrument operator
+                </div>
+            <p></p>
+            <div class=metanav>
+                <a href="{{ url_for('base_screen') }}">home</a>
+            </div>
+            <div class=metanav>
+                <a href="{{ url_for('logout') }}">log out</a>
+            </div>
+        </form>
+    {% else %}
+        <h3>Please log in to make queries</h3>
+            {% if not session.logged_in %}
+                <a href="{{ url_for('login') }}">log in</a>
+            {% endif %}
+    {% endif %}
+{% endblock %}

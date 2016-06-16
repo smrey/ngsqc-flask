@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+<head>
+    <meta charset="UTF-8">
+    <title>NGSQC Database</title>
+</head>
+<div class=page>
+    <h1>NGSQC Database</h1>
+    <div class=metanav>
+    </div>
+</div>
+  {% for message in get_flashed_messages() %}
+    <div class=flash>{{ message }}</div>
+  {% endfor %}
+    <body>
+    {% block body %}{% endblock %}
+    </body>
+</html>
