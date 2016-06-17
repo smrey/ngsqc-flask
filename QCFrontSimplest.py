@@ -302,19 +302,12 @@ class TileM(db.Model):
 
 
 ## Add a new user
-'''
-@app.before_first_request
+#@app.before_first_request
 def create_user():
-    #print User.password
-    db.create_all()
     user_datastore.create_user(email='matt@notface.net', password='passbags')
-    #current_date_and_time = datetime.datetime.now()
-    #user = User(email='matt@nobien.net', password='password', active=1, confirmed_at=current_date_and_time)
-    #db.session.add(user)
     db.session.commit()
-    print User.query.all()
-    print "User added"
-'''
+    flash('User added')
+
 
 '''
 @socketio.on('disconnect')
@@ -329,33 +322,14 @@ def base_screen():
     #print session #Use to debug log in and log out auto later
     return render_template('home.html')
 
-@app.route('/login', methods=['GET', 'POST'])
-@login_required
-def login():
-    error = None
-    if request.method == 'POST':
-        #Checking against usernames and passwords in the configuration
-        if request.form['username'] != app.config['USERNAME']:
-            error = 'Invalid username'
-        elif request.form['password'] != app.config['PASSWORD']:
-            error = 'Invalid password'
-        else:
-            session['logged_in'] = True
-            flash('You were logged in')
-            #Go back to the show entries page
-            return redirect(url_for('base_screen'))
-    #If unsuccessful at login show an error on the login.html template
-    return render_template('login.html', error=error)
-
-
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None) #This only pops the most recent session- need to use session.pop('yourkey',None)
     flash('You were logged out')
     return redirect(url_for('base_screen'))
 
-
 @app.route('/query', methods=['GET', 'POST'])
+@login_required
 def query_page():
     func_dict = dict([('run identifier','MiSeqRunID'),('run date', 'RunStartDate'),
                       ('reagent kit part id', 'ReagentKit'),('miseq', 'Instrument')])
@@ -375,7 +349,7 @@ def query_page():
             flash('No data entered')
             return redirect(url_for('query_page'))
         else:
-            from models_depr import Msr  # Previously had import * but this gave a warning
+            #from models_depr import Msr  # Previously had import * but this gave a warning
             # Returns all of the results as an object, which will will take attributes from later
             subset_records_MSR = Msr.query.filter_by(**search_dict).all()
             # Identify the subset of data required by the request

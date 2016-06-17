@@ -1,7 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
   <h2>Results of query</h2>
-    {% if session.logged_in %}
         <div class=metanav>
         <a href="{{ url_for('query_page') }}">new query</a>
         </div>
@@ -27,11 +26,5 @@
                 </tr>
             {% endfor %}
         </table>
-    {% else %}
-        <h3>Please log in to make queries</h3>
-            {% if not session.logged_in %}
-                <a href="{{ url_for('login') }}">log in</a>
-            {% endif %}
-    {% endif %}
 {% endblock %}
 
