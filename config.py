@@ -10,3 +10,6 @@ SQLALCHEMY_DATABASE_URI = 'mysql+mysqldb://%s' % full_db
 USERNAME = 'admin'
 PASSWORD = 'default'
 SECRET_KEY = 'development key'
+
+SECURITY_PASSWORD_HASH = 'sha512_crypt'
+SECURITY_PASSWORD_SALT = 'salting_key'

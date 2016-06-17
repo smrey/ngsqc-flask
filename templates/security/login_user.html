@@ -21,4 +21,7 @@
   {{ render_field(login_user_form.next) }}
   {{ render_field(login_user_form.submit) }}
 </form>
+<div class=metanav>
+    <a href="{{ url_for('base_screen') }}">home</a>
+</div>
 {% include "security/_menu.html" %}

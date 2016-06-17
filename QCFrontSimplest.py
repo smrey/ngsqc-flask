@@ -1,7 +1,8 @@
 import datetime
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required
+from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required, roles_accepted,\
+login_user, logout_user
 #from flask_socketio import SocketIO, emit
 from flask import render_template, request, session, redirect, url_for, flash
 
@@ -108,208 +109,18 @@ class Rds(db.Model):
     def __repr__(self):
         return"<Reads(%s,%s,%s,%s)>" % (self.ReadID,self.ReadNumber,self.Indexed,self.NumberOfCycles)
 
-class IntM(db.Model):
-    __table__ = db.Model.metadata.tables['correctedintmetrics']
-
-    def __init__(self, LaneID, TileID, CycleID, MiSeqRunID, AverageIntensity, AverageCorrectedIntensity_A,
-                 AverageCorrectedIntensity_C, AverageCorrectedIntensity_G, AverageCorrectedIntensity_T,
-                 AverageCorrectedIntensityCalledClusters_A, AverageCorrectedIntensityCalledClusters_C,
-                 AverageCorrectedIntensityCalledClusters_G, AverageCorrectedIntensityCalledClusters_T,
-                 NumNoCalls, NUM_A, NUM_C, NUM_G, NUM_T, Signal2NoiseRatio):
-        self.LaneID = LaneID
-        self.TileID = TileID
-        self.CycleID = CycleID
-        self.MiSeqRunID = MiSeqRunID
-        self.AverageIntensity = AverageIntensity
-        self.AverageCorrectedIntensity_A = AverageCorrectedIntensity_A
-        self.AverageCorrectedIntensity_C = AverageCorrectedIntensity_C
-        self.AverageCorrectedIntensity_G = AverageCorrectedIntensity_G
-        self.AverageCorrectedIntensity_T = AverageCorrectedIntensity_T
-        self.AverageCorrectedIntensityCalledClusters_A = AverageCorrectedIntensityCalledClusters_A
-        self.AverageCorrectedIntensityCalledClusters_C = AverageCorrectedIntensityCalledClusters_C
-        self.AverageCorrectedIntensityCalledClusters_G = AverageCorrectedIntensityCalledClusters_G
-        self.AverageCorrectedIntensityCalledClusters_T = AverageCorrectedIntensityCalledClusters_T
-        self.NumNoCalls = NumNoCalls
-        self.NUM_A = NUM_A
-        self.NUM_C = NUM_C
-        self.NUM_G = NUM_G
-        self.NUM_T = NUM_T
-        self.Signal2NoiseRatio = Signal2NoiseRatio
-
-    def __repr__(self):
-        return "<CorrectedIntMetrics(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)>" \
-               % (self.LaneID, self.TileID, self.CycleID, self.MiSeqRunID, self.AverageIntensity,
-                  self.AverageCorrectedIntensity_A, self.AverageCorrectedIntensity_C, self.AverageCorrectedIntensity_G,
-                  self.AverageCorrectedIntensity_T, self.AverageCorrectedIntensityCalledClusters_A,
-                  self.AverageCorrectedIntensityCalledClusters_C, self.AverageCorrectedIntensityCalledClusters_G,
-                  self.AverageCorrectedIntensityCalledClusters_T, self.NumNoCalls, self.NUM_A, self.NUM_C, self.NUM_G,
-                  self.NUM_T, self.Signal2NoiseRatio)
-
-
-class ExtM(db.Model):
-    __table__ = db.Model.metadata.tables['extractionmetrics']
-
-    def __init__(self, LaneID, TileID, CycleID, MiSeqRunID, FWHM_A, FWHM_C, FWHM_G, FWHM_T, Intensity_A, Intensity_C,
-                 Intensity_G, Intensity_T, Date, Time):
-        self.LaneID = LaneID
-        self.TileID = TileID
-        self.CycleID = CycleID
-        self.MiSeqRunID = MiSeqRunID
-        self.FWHM_A = FWHM_A
-        self.FWHM_C = FWHM_C
-        self.FWHM_G = FWHM_G
-        self.FWHM_T = FWHM_T
-        self.Intensity_A = Intensity_A
-        self.Intensity_C = Intensity_C
-        self.Intensity_G = Intensity_G
-        self.Intensity_T = Intensity_T
-        self.Date = Date
-        self.Time = Time
-
-    def __repr__(self):
-        return "<ExtractionMetrics(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)>" \
-               % (self.LaneID, self.TileID, self.CycleID, self.MiSeqRunID, self.FWHM_A, self.FWHM_C, self.FWHM_G,
-                  self.FWHM_T, self.Intensity_A, self.Intensity_C, self.Intensity_G, self.Intensity_T, self.Date,
-                  self.Time)
-
-
-class ErrM(db.Model):
-    __table__ = db.Model.metadata.tables['errormetrics']
-
-    def __init__(self, LaneID, TileID, CycleID, MiSeqRunID, ErrorRate, NumPerfectRds, NumSingleError, NumDoubleError,
-                 NumTripleError, NumQuadrupleError):
-        self.LaneID = LaneID
-        self.TileID = TileID
-        self.CycleID = CycleID
-        self.MiSeqRunID = MiSeqRunID
-        self.ErrorRate = ErrorRate
-        self.NumPerfectRds = NumPerfectRds
-        self.NumSingleError = NumSingleError
-        self.NumDoubleError = NumDoubleError
-        self.NumTripleError = NumTripleError
-        self.NumQuadrupleError = NumQuadrupleError
-
-def __repr__(self):
-    return "<ErrorMetrics(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)>" \
-           % (self.LaneID, self.TileID, self.CycleID, self.MiSeqRunID, self.ErrorRate, self.NumPerfectRds,
-              self.NumSingleError, self.NumDoubleError, self.NumTripleError, self.NumQuadrupleError)
-
-
-class IndMMsr(db.Model):
-    __table__ = db.Model.metadata.tables['indexmetricsmsr']
-
-    def __init__(self, LaneID, TileID, ReadNum, MiSeqRunID, IndexName, NumControlClusters, SampleName, ProjectName):
-        self.LaneID = LaneID
-        self.TileID = TileID
-        self.ReadNum = ReadNum
-        self.MiSeqRunID = MiSeqRunID
-        self.IndexName = IndexName
-        self.NumControlClusters = NumControlClusters
-        self.SampleName = SampleName
-        self.ProjectName = ProjectName
-
-    def __repr__(self):
-        return "<IndexMetricsMiSeqRun(%s,%s,%s,%s,%s,%s,%s,%s)>" \
-            % (self.LaneID, self.TileID, self.ReadNum, self.MiSeqRunID, self.IndexName, self.NumControlClusters,
-               self.SampleName,self.ProjectName)
-
-
-class QualM(db.Model):
-    __table__ = db.Model.metadata.tables['qualitymetrics']
-
-    def __init__(self, LaneID, TileID, CycleID,MiSeqRunID,Q01,Q02,Q03,Q04,Q05,Q06,Q07,Q08,Q09,Q10,Q11,Q12,Q13,Q14,
-                    Q15,Q16,Q17,Q18,Q19,Q20,Q21,Q22,Q23,Q24,Q25,Q26,Q27,Q28,Q29,Q30,Q31,Q32,Q33,Q34,Q35,Q36,Q37,Q38,
-                    Q39,Q40,Q41,Q42,Q43,Q44,Q45,Q46,Q47,Q48,Q49,Q50):
-        self.LaneID = LaneID
-        self.TileID = TileID
-        self.CycleID = CycleID
-        self.MiSeqRunID = MiSeqRunID
-        self.Q01 = Q01
-        self.Q02 = Q02
-        self.Q03 = Q03
-        self.Q04 = Q04
-        self.Q05 = Q05
-        self.Q06 = Q06
-        self.Q07 = Q07
-        self.Q08 = Q08
-        self.Q09 = Q09
-        self.Q10 = Q10
-        self.Q11 = Q11
-        self.Q12 = Q12
-        self.Q13 = Q13
-        self.Q14 = Q14
-        self.Q15 = Q15
-        self.Q16 = Q16
-        self.Q17 = Q17
-        self.Q18 = Q18
-        self.Q19 = Q19
-        self.Q20 = Q20
-        self.Q21 = Q21
-        self.Q22 = Q22
-        self.Q23 = Q23
-        self.Q24 = Q24
-        self.Q25 = Q25
-        self.Q26 = Q26
-        self.Q27 = Q27
-        self.Q28 = Q28
-        self.Q29 = Q29
-        self.Q30 = Q30
-        self.Q31 = Q31
-        self.Q32 = Q32
-        self.Q33 = Q33
-        self.Q34 = Q34
-        self.Q35 = Q35
-        self.Q36 = Q36
-        self.Q37 = Q37
-        self.Q38 = Q38
-        self.Q39 = Q39
-        self.Q40 = Q40
-        self.Q41 = Q41
-        self.Q42 = Q42
-        self.Q43 = Q43
-        self.Q44 = Q44
-        self.Q45 = Q45
-        self.Q46 = Q46
-        self.Q47 = Q47
-        self.Q48 = Q48
-        self.Q49 = Q49
-        self.Q50 = Q50
-
-    def __repr__(self):
-        return "<QualityMetrics(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
-               "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)>" \
-               % (self.LaneID, self.TileID, self.CycleID,self.MiSeqRunID,self.Q01,self.Q02,self.Q03,self.Q04,self.Q05,
-                  self.Q06,self.Q07,self.Q08,self.Q09,self.Q10,self.Q11,self.Q12,self.Q13,self.Q14,self.Q15,self.Q16,
-                  self.Q17,self.Q18,self.Q19,self.Q20,self.Q21,self.Q22,self.Q23,self.Q24,self.Q25,self.Q26,self.Q27,
-                  self.Q28,self.Q29,self.Q30,self.Q31,self.Q32,self.Q33,self.Q34,self.Q35,self.Q36,self.Q37,self.Q38,
-                    self.Q39,self.Q40,self.Q41,self.Q42,self.Q43,self.Q44,self.Q45,self.Q46,self.Q47,self.Q48,self.Q49,
-                    self.Q50)
-
-
-class TileM(db.Model):
-    __table__ = db.Model.metadata.tables['tilemetrics']
-
-    def __init__(self, LaneID, TileID, CodeID, MiSeqRunID, Value):
-        self.LaneID = LaneID
-        self.TileID = TileID
-        self.CodeID = CodeID
-        self.MiSeqRunID = MiSeqRunID
-        self.Value = Value
-
-    def __repr__(self):
-        return "<IndexMetricsMiSeqRun(%s,%s,%s,%s,%s)>" \
-               % (self.LaneID, self.TileID, self.CodeID, self.MiSeqRunID, self.Value)
-
 
 ## Add a new user
-#@app.before_first_request
+@app.route('/register_user')
+#@roles_accepted('admin') #Just for testing have commented out
 def create_user():
-    user_datastore.create_user(email='matt@notface.net', password='passbags')
-    db.session.commit()
+    create_user(email='nop', password='yep')
+    #user_datastore.create_user(email='matt@notface.net', password='passbags')
+    #db.session.commit()
     flash('User added')
+    return render_template('home.html')
 
-
-'''
+''' #This approach is still not working 17/06/16
 @socketio.on('disconnect')
 def disconnect_user():
     #Disconnects the user when the browser is closed
@@ -319,12 +130,17 @@ def disconnect_user():
 
 @app.route('/', methods=['GET', 'POST'])
 def base_screen():
-    #print session #Use to debug log in and log out auto later
     return render_template('home.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    login_user()
+    flash('You were logged in')
+    return redirect(url_for('base_screen'))
 
 @app.route('/logout')
 def logout():
-    session.pop('logged_in', None) #This only pops the most recent session- need to use session.pop('yourkey',None)
+    logout_user()
     flash('You were logged out')
     return redirect(url_for('base_screen'))
 
@@ -344,12 +160,10 @@ def query_page():
         if (button == 'miseq') and ((identifier.lower()) in miseq_dict.keys()):
             identifier = miseq_dict.get(identifier.lower(),None)
         search_dict = dict([(searcher,identifier)])
-        if not identifier:  # '150820_M02641_0017_000000000-AGJJA':
-                # print 'triggering' #testing that this syntax worked if there was no entry in the query field
+        if not identifier:
             flash('No data entered')
             return redirect(url_for('query_page'))
         else:
-            #from models_depr import Msr  # Previously had import * but this gave a warning
             # Returns all of the results as an object, which will will take attributes from later
             subset_records_MSR = Msr.query.filter_by(**search_dict).all()
             # Identify the subset of data required by the request
@@ -370,6 +184,7 @@ def query_page():
                 message_to_flash = 'Identifier not found in the database for "%s". Please try again.' % button
                 flash(message_to_flash)
                 return redirect(url_for('query_page'))
+
             ## I'm not really happy with the below code- need to fix it later ##
             all_entries = []
             for entry in results:
