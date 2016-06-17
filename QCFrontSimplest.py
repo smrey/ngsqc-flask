@@ -4,14 +4,12 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required, roles_accepted,\
 login_user, logout_user, current_user
 from flask.ext.security.utils import encrypt_password
-from flask_socketio import SocketIO, emit
 from flask import render_template, request, session, redirect, url_for, flash
 
 ##Create the app
 app = Flask(__name__)
 
 app.config.from_object('config')
-socketio = SocketIO(app)
 
 ##Create the database connection object
 db = SQLAlchemy(app)
@@ -118,13 +116,6 @@ class Rds(db.Model):
 
 
 #End of the models. Beginning of the app.
-#This approach is still not working 17/06/16
-@socketio.on('disconnect')
-def disconnect_user():
-    #Disconnects the user when the browser is closed
-    #Annoyingly this is now not working as expected
-    return logout()
-
 @app.before_first_request
 def make_roles():
     user_datastore.find_or_create_role(name='admin', description='database administrator')
@@ -137,7 +128,7 @@ def session_management():
     Make the app timeout after 5 minutes of inactivity
     '''
     session.permanent = True
-    app.permanent_session_lifetime = timedelta(minutes=1)
+    app.permanent_session_lifetime = timedelta(minutes=5)
 
 ## Add a new user
 @app.route('/register', methods=['GET', 'POST'])
@@ -238,6 +229,7 @@ def query_page():
 
             ## I'm not really happy with the below code- need to fix it later ##
             all_entries = []
+            headers = []
             for entry in results:
                 this_entry = []
                 headers = [] #This is a bit inefficient, it re-sets the headers every time-- FIX
