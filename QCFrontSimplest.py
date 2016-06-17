@@ -1,16 +1,17 @@
-import datetime
+from datetime import timedelta
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required, roles_accepted,\
-login_user, logout_user
-#from flask_socketio import SocketIO, emit
+login_user, logout_user, current_user
+from flask.ext.security.utils import encrypt_password
+from flask_socketio import SocketIO, emit
 from flask import render_template, request, session, redirect, url_for, flash
 
 ##Create the app
 app = Flask(__name__)
 
 app.config.from_object('config')
-#socketio = SocketIO(app)
+socketio = SocketIO(app)
 
 ##Create the database connection object
 db = SQLAlchemy(app)
@@ -32,8 +33,16 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(255))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime())
+    last_login_at = db.Column(db.DateTime())
+    current_login_at = db.Column(db.DateTime())
+    last_login_ip = db.Column(db.String(20))
+    current_login_ip = db.Column(db.String(20))
+    login_count = db.Column(db.Integer)
     roles = db.relationship('Role', secondary=roles_users,
                                 backref=db.backref('users', lazy='dynamic'))
+
+#Create the database models in the database- run first time only
+#db.create_all()
 
 ##Setup Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
@@ -46,8 +55,7 @@ db.Model.metadata.reflect(db.engine) #database is bound to an engine here
 class LinkMsrRds(db.Model):
     __table__ = db.Model.metadata.tables['linkmiseqrunrds']
 
-    def __init__(self, LinkMiSeqRunRdsID, MiSeqRunID, ReadID):
-        self.LinkMiSeqRunRdsID = LinkMiSeqRunRdsID
+    def __init__(self, MiSeqRunID, ReadID):
         self.MiSeqRunID = MiSeqRunID
         self.ReadID = ReadID
 
@@ -100,8 +108,7 @@ class Msr(db.Model):
 class Rds(db.Model):
     __table__ = db.Model.metadata.tables['rds']
 
-    def __init__(self,ReadID,ReadNumber,Indexed,NumberOfCycles):
-        self.ReadID = ReadID
+    def __init__(self,ReadNumber,Indexed,NumberOfCycles):
         self.ReadNumber = ReadNumber
         self.Indexed = Indexed
         self.NumberOfCycles = NumberOfCycles #Can have a different variable name here and it doesn't break for the queries used
@@ -110,38 +117,82 @@ class Rds(db.Model):
         return"<Reads(%s,%s,%s,%s)>" % (self.ReadID,self.ReadNumber,self.Indexed,self.NumberOfCycles)
 
 
-## Add a new user
-@app.route('/register_user')
-#@roles_accepted('admin') #Just for testing have commented out
-def create_user():
-    create_user(email='nop', password='yep')
-    #user_datastore.create_user(email='matt@notface.net', password='passbags')
-    #db.session.commit()
-    flash('User added')
-    return render_template('home.html')
-
-''' #This approach is still not working 17/06/16
+#End of the models. Beginning of the app.
+#This approach is still not working 17/06/16
 @socketio.on('disconnect')
 def disconnect_user():
     #Disconnects the user when the browser is closed
     #Annoyingly this is now not working as expected
     return logout()
-'''
+
+@app.before_first_request
+def make_roles():
+    user_datastore.find_or_create_role(name='admin', description='database administrator')
+    user_datastore.find_or_create_role(name='user', description='standard user')
+    db.session.commit()
+
+@app.before_request
+def session_management():
+    '''
+    Make the app timeout after 5 minutes of inactivity
+    '''
+    session.permanent = True
+    app.permanent_session_lifetime = timedelta(minutes=1)
+
+## Add a new user
+@app.route('/register', methods=['GET', 'POST'])
+@roles_accepted('admin') #Just for testing have commented out
+def create_user():
+    error = None
+    if request.method == 'POST':
+        un = request.form['username']
+        if user_datastore.get_user(un) != None:
+            flash('Username already in database')
+            return redirect(url_for('create_user'))
+        pa = request.form['password']
+        cl = request.form['userclass']
+        user_datastore.create_user(email=un, password=encrypt_password(pa))
+        user_datastore.add_role_to_user(un,cl)
+        db.session.commit()
+        flash('User added')
+        return redirect(url_for('login'))
+    return render_template('register.html', error=error)
+
+#Delete a user
+@app.route('/delete_user', methods=['GET', 'POST'])
+@roles_accepted('admin')
+def delete_user():
+    error = None
+    if request.method == 'POST':
+        user_for_deletion = request.form['to_delete']
+        to_delete = User.query.filter_by(email=user_for_deletion).first()
+        user_datastore.delete_user(to_delete)
+        db.session.commit()
+        flash('User "%s" deleted' % user_for_deletion)
+    return render_template('remove_user.html', error=error)
+
 
 @app.route('/', methods=['GET', 'POST'])
 def base_screen():
-    return render_template('home.html')
+    admin = False
+    loggedin = current_user.is_authenticated
+    if loggedin:
+        flash('You are logged in as "%s"' % current_user.email )
+        admin = current_user.has_role('admin')
+    if not loggedin:
+        flash('You are logged out')
+    return render_template('home.html', loggedin=loggedin, admin=admin)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     login_user()
-    flash('You were logged in')
+    flash('You were logged in') #Not being displayed at present
     return redirect(url_for('base_screen'))
 
 @app.route('/logout')
 def logout():
     logout_user()
-    flash('You were logged out')
+    flash('You were logged out') #Not being displayed at present
     return redirect(url_for('base_screen'))
 
 @app.route('/query', methods=['GET', 'POST'])

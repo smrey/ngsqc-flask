@@ -1,16 +1,25 @@
 {% extends "layout.html" %}
 {% block body %}
     <h2>Welcome to the NGS Quality Control database</h2>
-    <div class=metanav>
-            <a href="{{ url_for('query_page') }}">query</a>
-    </div>
+    {% if not loggedin %}
     <div class=metanav>
         <a href="{{ url_for('login') }}">log in</a>
     </div>
+    {% endif %}
+    <div class=metanav>
+            <a href="{{ url_for('query_page') }}">query</a>
+    </div>
+    {% if loggedin %}
     <div class=metanav>
             <a href="{{ url_for('logout') }}">log out</a>
     </div>
+    {% endif %}
+    {% if admin %}
     <div class=metanav>
             <a href="{{ url_for('create_user') }}">add new user (administrator only)</a>
     </div>
+    <div class=metanav>
+            <a href="{{ url_for('delete_user') }}">remove a user (administrator only)</a>
+    </div>
+    {% endif %}
 {% endblock %}
