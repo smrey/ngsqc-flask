@@ -3,6 +3,7 @@
 {% block body %}
   <h2 style="colour:blue;">Query database</h2>
         <form action="{{ url_for('query_page') }}" method=post>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <dl>
                 <dt>Enter search term:</dt>
                 <dd><input type=text name=search_term></dd>

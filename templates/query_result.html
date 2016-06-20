@@ -18,11 +18,11 @@
             </tr>
             {% for entry in entries %}
                 <tr>
-                    <td>{{ entry[0] }}</td>
-                    <td>{{ entry[1] }}</td>
-                    <td>{{ entry[2] }}</td>
-                    <td>{{ entry[3] }}</td>
-                    <td>{{ entry[4] }}</td>
+                    <td>{{ entry[0]|safe }}</td>
+                    <td>{{ entry[1]|safe }}</td>
+                    <td>{{ entry[2]|safe }}</td>
+                    <td>{{ entry[3]|safe }}</td>
+                    <td>{{ entry[4]|safe }}</td>
                 </tr>
             {% endfor %}
         </table>

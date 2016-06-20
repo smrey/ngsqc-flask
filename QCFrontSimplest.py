@@ -15,6 +15,9 @@ app.config.from_object('config')
 ##Create the database connection object
 db = SQLAlchemy(app)
 
+#Include csrf protection
+csrf = CsrfProtect(app)
+
 ##Models
 ##Define models for the user authentication
 roles_users = db.Table('roles_users',

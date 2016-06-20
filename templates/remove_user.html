@@ -3,6 +3,7 @@
   <h2>Delete user from the database</h2>
   {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
   <form action="{{ url_for('delete_user') }}" method=post>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <dl>
       <dt>Username of user to delete:</dt>
       <dd><input type=text name=to_delete>
