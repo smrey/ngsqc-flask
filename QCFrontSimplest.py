@@ -5,6 +5,7 @@ from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, Rol
 login_user, logout_user, current_user
 from flask.ext.security.utils import encrypt_password
 from flask import render_template, request, session, redirect, url_for, flash
+from flask_wtf.csrf import CsrfProtect
 
 ##Create the app
 app = Flask(__name__)
