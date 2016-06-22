@@ -10,7 +10,8 @@ from flask_wtf.csrf import CsrfProtect
 ##Create the app
 app = Flask(__name__)
 
-app.config.from_object('config')
+##Import the configuration specified in the config.py file
+app.config.from_pyfile('config.py')
 
 ##Create the database connection object
 db = SQLAlchemy(app)
@@ -20,6 +21,10 @@ csrf = CsrfProtect(app)
 
 ##Models
 ##Define models for the user authentication
+'''
+These models were created as relations in the database using the command db.createall() the first time the application
+is run.
+'''
 roles_users = db.Table('roles_users',
                            db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
                            db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
@@ -43,15 +48,18 @@ class User(db.Model, UserMixin):
     roles = db.relationship('Role', secondary=roles_users,
                                 backref=db.backref('users', lazy='dynamic'))
 
-#Create the database models in the database- run first time only
-#db.create_all()
 
 ##Setup Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-security = Security(app, user_datastore) #I needed a decorator @login_required and then to html override the template
+security = Security(app, user_datastore)
 
 
 #Existing models
+'''
+These relations already existed in the database prior to development of the front end. The reflect command from
+flask-sql alchemy has been used to create a model of the relations and tuples, so these are not defined explicitly.
+The __repr__ function defines how the data within the class object is returned.
+'''
 db.Model.metadata.reflect(db.engine) #database is bound to an engine here
 
 class LinkMsrRds(db.Model):
@@ -119,9 +127,14 @@ class Rds(db.Model):
         return"<Reads(%s,%s,%s,%s)>" % (self.ReadID,self.ReadNumber,self.Indexed,self.NumberOfCycles)
 
 
-#End of the models. Beginning of the app.
+##Beginning of the application code
 @app.before_first_request
 def make_roles():
+    '''
+    Checks that the required roles exist in the database and if not adds them.
+    More roles could be added from this function using the same syntax as below.
+    :return: None
+    '''
     user_datastore.find_or_create_role(name='admin', description='database administrator')
     user_datastore.find_or_create_role(name='user', description='standard user')
     db.session.commit()
@@ -129,15 +142,22 @@ def make_roles():
 @app.before_request
 def session_management():
     '''
-    Make the app timeout after 5 minutes of inactivity
+    Makes the app timeout after 5 minutes of inactivity
+    :return: None
     '''
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=5)
 
 ## Add a new user
+# Only available to users logged in with admin permissions
 @app.route('/register', methods=['GET', 'POST'])
-@roles_accepted('admin') #Just for testing have commented out
+@roles_accepted('admin')
 def create_user():
+    '''
+    Requires users with administrative privileges
+    Allows new users of the web application to be added
+    :return: returns the administrator to the user registration screen
+    '''
     error = None
     if request.method == 'POST':
         un = request.form['username']
@@ -150,13 +170,17 @@ def create_user():
         user_datastore.add_role_to_user(un,cl)
         db.session.commit()
         flash('User added')
-        return redirect(url_for('login'))
     return render_template('register.html', error=error)
 
 #Delete a user
 @app.route('/delete_user', methods=['GET', 'POST'])
 @roles_accepted('admin')
 def delete_user():
+    '''
+    Requires users with administrative privileges
+    Allows users of the web application to be removed
+    :return: returns the administrator to the remove user screen
+    '''
     error = None
     if request.method == 'POST':
         user_for_deletion = request.form['to_delete']
@@ -169,6 +193,10 @@ def delete_user():
 
 @app.route('/', methods=['GET', 'POST'])
 def base_screen():
+    '''
+    Displays the home screen and a popup indicating whether the user is logged in or not
+    :return: home screen
+    '''
     admin = False
     loggedin = current_user.is_authenticated
     if loggedin:
@@ -180,19 +208,31 @@ def base_screen():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    '''
+    Allows the user to log in to the web application
+    :return: returns the user to the home screen
+    '''
     login_user()
-    flash('You were logged in') #Not being displayed at present
     return redirect(url_for('base_screen'))
 
 @app.route('/logout')
 def logout():
+    '''
+    Allows the user to log out of the web application
+    :return: returns the user to the home screen
+    '''
     logout_user()
-    flash('You were logged out') #Not being displayed at present
     return redirect(url_for('base_screen'))
 
 @app.route('/query', methods=['GET', 'POST'])
 @login_required
 def query_page():
+    '''
+    Allows a logged in user to make queries by Run identifier, Run date, Reagent kit or Operator.
+    Informs the user if no data was entered, if no checkboxes were selected indicating the subset of data to retrieve,
+    or if no data matching the criteria was found in the database and returns the user to the query statement
+    :return: Returns the subset of data requested in a table format
+    '''
     func_dict = dict([('run identifier','MiSeqRunID'),('run date', 'RunStartDate'),
                       ('reagent kit part id', 'ReagentKit'),('miseq', 'Instrument')])
     miseq_dict = dict([('nemo','M00766'),('dory','M02641')])
@@ -224,7 +264,7 @@ def query_page():
                 flash('No checkboxes selected for data to return')
                 return redirect(url_for('query_page'))
 
-            # To aid understanding, 'results' is used here, which is the result of the query
+            # To aid readability, 'results' is used here, which is the result of the query
             results = subset_records_MSR
             if not results:
                 message_to_flash = 'Identifier not found in the database for "%s". Please try again.' % button
@@ -239,7 +279,7 @@ def query_page():
                 headers = [] #This is a bit inefficient, it re-sets the headers every time-- FIX
                 if "MiSeqRunID" in desired_output:
                     msrid = entry.MiSeqRunID
-                    this_entry.append(str(msrid)) #Convert to a string so that the format of display is not weird
+                    this_entry.append(str(msrid)) #Convert to a string so that the format of display is as required
                     headers.append('MiSeq run identifier')
                 if "RunStartDate" in desired_output:
                     rsd = entry.RunStartDate
@@ -263,6 +303,6 @@ def query_page():
     return render_template('query.html')
 
 
-
+#Run the application, but only if the script is run directly
 if __name__ == '__main__':
     app.run()
