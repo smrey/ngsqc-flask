@@ -170,7 +170,7 @@ def create_user():
             return redirect(url_for('create_user'))
         cl = request.form['userclass']
         if (cl != "admin") and (cl != "user"):
-            flash('A user must belong to either the "admin" or a "user" user class')
+            flash('A user must belong to either the "admin" or "user" user class')
             return redirect(url_for('create_user'))
         user_datastore.create_user(email=un, password=encrypt_password(pa))
         user_datastore.add_role_to_user(un,cl)
