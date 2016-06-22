@@ -1,4 +1,4 @@
-# ngsqc-flask we application
+# ngsqc-flask web application
 
 A basic front end for access to the NGSQC MySQL database which contains data from InterOp files, runparameters.xml and SamplesSheet.csv files output by Illumina MiSeq sequencers.
 
