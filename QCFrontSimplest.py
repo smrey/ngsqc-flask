@@ -165,7 +165,13 @@ def create_user():
             flash('Username already in database')
             return redirect(url_for('create_user'))
         pa = request.form['password']
+        if pa == '':
+            flash('Please enter a password for the user')
+            return redirect(url_for('create_user'))
         cl = request.form['userclass']
+        if (cl != "admin") and (cl != "user"):
+            flash('A user must belong to either the "admin" or a "user" user class')
+            return redirect(url_for('create_user'))
         user_datastore.create_user(email=un, password=encrypt_password(pa))
         user_datastore.add_role_to_user(un,cl)
         db.session.commit()
@@ -185,6 +191,9 @@ def delete_user():
     if request.method == 'POST':
         user_for_deletion = request.form['to_delete']
         to_delete = User.query.filter_by(email=user_for_deletion).first()
+        if to_delete == None:
+            flash('This user does not exist')
+            return redirect(url_for('delete_user'))
         user_datastore.delete_user(to_delete)
         db.session.commit()
         flash('User "%s" deleted' % user_for_deletion)
