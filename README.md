@@ -17,7 +17,7 @@ Provides access to a limited number of prepared methods for querying the databas
 Provides access control through usernames and passwords and user classes 
 
 ##Software versions
-Flask version 0.10.1
-Flask-SQLAlchemy version 2.1
-Flask-Security version 1.7.5
+Flask version 0.10.1  
+Flask-SQLAlchemy version 2.1  
+Flask-Security version 1.7.5  
 
